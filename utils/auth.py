@@ -7,25 +7,25 @@ class Auth:
     def __init__(self, db):
         self.db = db
         self.ph = PasswordHasher(
-            time_cost=3,      # Number of iterations
-            memory_cost=65536,  # Memory usage in kibibytes (64 MB)
-            parallelism=4,    # Degree of parallelism
-            hash_len=32,      # Hash output length
-            salt_len=16       # Salt length
+            time_cost=3,      # Número de iteraciones
+            memory_cost=65536,  # Uso de memoria en kb (64 MB)
+            parallelism=4,    # Grado de paralelismo
+            hash_len=32,      # Longitud del hash
+            salt_len=16       # Longitud de la sal
         )
     
     def register_user(self, username, password, user_level=1):
-        """Register a new user in the system."""
-        # Check if user already exists
+        """Registrar un nuevo usuario en el sistema."""
+        # Verificar si el usuario ya existe
         existing_user = self.db.get_user(username)
         if existing_user:
             return False, "Username already taken"
         
-        # Generate salt
+        # Generar salt
         salt = os.urandom(16)
         salt_b64 = base64.b64encode(salt).decode('utf-8')
         
-        # Hash password with salt
+        # Contraseña Hash con salt
         try:
             password_hash = self.ph.hash(password + salt_b64)
             user_id = self.db.add_user(username, password_hash, salt_b64, user_level)
@@ -44,9 +44,9 @@ class Auth:
         user_id, username, password_hash, salt_b64, user_level = user
         
         try:
-            # Verify the password
+            # Verificar la contraseña
             self.ph.verify(password_hash, password + salt_b64)
-            # Check if the hash needs rehashing
+            # Verificar si el hash necesita rehashing
             if self.ph.check_needs_rehash(password_hash):
                 new_hash = self.ph.hash(password + salt_b64)
                 self.db.update_user_password(user_id, new_hash)

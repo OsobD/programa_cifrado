@@ -15,7 +15,7 @@ class Database:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        # Create users table
+        # Crear tabla de usuarios
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,7 +27,7 @@ class Database:
         )
         ''')
         
-        # Create encrypted_files table
+        # Crear tabla de archivos encriptados
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS encrypted_files (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

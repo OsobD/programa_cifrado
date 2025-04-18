@@ -10,6 +10,7 @@ class LoginDialog(QDialog):
         self.user_data = None
         self.setup_ui()
     
+    # Estilos de UI
     def setup_ui(self):
         self.setWindowTitle("Encriptador de Archivos Seguro - Acceso")
         self.setMinimumWidth(400)
@@ -92,6 +93,7 @@ class LoginDialog(QDialog):
         
         self.setLayout(main_layout)
     
+    # Funciones de login y registro
     def login(self):
         username = self.username_input.text().strip()
         password = self.password_input.text()

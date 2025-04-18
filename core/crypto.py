@@ -8,11 +8,40 @@ from argon2.low_level import hash_secret_raw
 import argon2
 
 class CryptoManager:
+    """
+    Administrador de operaciones criptográficas para el cifrado y descifrado de archivos.
+    
+    Esta clase da métodos para cifrar y descifrar archivos utilizando
+    AES-256-GCM con derivación de claves Argon2. Permite configurar diferentes
+    niveles de seguridad que afectan a los parámetros de Argon2.
+    
+    Atributos:
+        time_cost (int): Costo de tiempo para Argon2
+        memory_cost (int): Costo de memoria para Argon2 (en bytes)
+        parallelism (int): Nivel de paralelismo para Argon2
+        hash_len (int): Longitud de salida del hash
+        salt_len (int): Longitud de la sal
+    """
     def __init__(self, security_level="medium"):
+        """
+        Inicia un nuevo administrador criptográfico.
+        
+        Args:
+            security_level (str): Nivel de seguridad, puede ser "low", "medium" o "high".
+                                  Por defecto es "medium".
+        """
         self.set_security_level(security_level)
     
     def set_security_level(self, level):
-        """Set security parameters based on the security level"""
+        """
+        Establece los parámetros de seguridad basados en el nivel de seguridad.
+        
+        Los niveles de seguridad afectan a los parámetros de Argon2 para la
+        derivación de claves, balanceando seguridad y rendimiento.
+        
+        Args:
+            level (str): Nivel de seguridad, puede ser "low", "medium" o "high".
+        """
         if level == "low":
             self.time_cost = 2
             self.memory_cost = 32768  # 32 MB
@@ -30,7 +59,20 @@ class CryptoManager:
         self.salt_len = 16  # Salt length
     
     def derive_key(self, password, salt=None):
-        """Derive an encryption key from a password using Argon2"""
+        """
+        Deriva una clave de cifrado a partir de una contraseña utilizando Argon2.
+        
+        Utiliza el algoritmo Argon2id, que es resistente a ataques por hardware
+        especializado y de canal lateral.
+        
+        Args:
+            password (str): La contraseña de la que derivar la clave.
+            salt (bytes, opcional): La sal a utilizar. Si no se proporciona, se genera una aleatoria.
+        
+        Returns:
+            tuple: Una tupla (clave_derivada, sal), donde clave_derivada son los bytes de la clave
+                  y sal son los bytes de la sal utilizada.
+        """
         if salt is None:
             salt = os.urandom(self.salt_len)
         
@@ -48,7 +90,30 @@ class CryptoManager:
         return raw_key, salt
     
     def encrypt_file(self, file_path, password):
-        """Encrypt a file using AES-256-GCM with Argon2 key derivation"""
+        """
+        Cifra un archivo utilizando AES-256-GCM con derivación de clave Argon2.
+        
+        Este método lee un archivo, lo cifra, y guarda el resultado en un nuevo archivo
+        con la extensión .encrypted. La sal y el nonce se almacenan junto con los datos
+        cifrados, mientras que la etiqueta de autenticación se devuelve por separado.
+        
+        Args:
+            file_path (str): Ruta al archivo a cifrar.
+            password (str): Contraseña para cifrar el archivo.
+        
+        Returns:
+            dict: Un diccionario con metadatos sobre el archivo cifrado, incluyendo:
+                - original_filename: Nombre del archivo original
+                - encrypted_filename: Nombre del archivo cifrado
+                - file_size: Tamaño del archivo original
+                - file_type: Tipo de archivo basado en la extensión
+                - encrypted_file_path: Ruta completa al archivo cifrado
+                - nonce: Nonce utilizado para el cifrado
+                - tag: Etiqueta de autenticación
+        
+        Raises:
+            Exception: Si el cifrado falla por cualquier razón.
+        """
         try:
             # Read the file
             with open(file_path, 'rb') as file:
@@ -99,7 +164,26 @@ class CryptoManager:
             raise Exception(f"Encryption failed: {str(e)}")
     
     def decrypt_file(self, encrypted_file_path, password, output_path, nonce, tag):
-        """Decrypt a file using AES-256-GCM with Argon2 key derivation"""
+        """
+        Descifra un archivo utilizando AES-256-GCM con derivación de clave Argon2.
+        
+        Este método lee un archivo cifrado y lo descifra utilizando la contraseña proporcionada,
+        el nonce y la etiqueta de autenticación. El resultado se guarda en la ruta de salida
+        especificada.
+        
+        Args:
+            encrypted_file_path (str): Ruta al archivo cifrado.
+            password (str): Contraseña para descifrar el archivo.
+            output_path (str): Ruta donde guardar el archivo descifrado.
+            nonce (bytes): Nonce utilizado durante el cifrado.
+            tag (bytes): Etiqueta de autenticación.
+        
+        Returns:
+            bool: True si el descifrado fue exitoso.
+        
+        Raises:
+            Exception: Si el descifrado falla por cualquier razón.
+        """
         try:
             # Read the encrypted file
             with open(encrypted_file_path, 'rb') as encrypted_file:

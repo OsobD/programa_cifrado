@@ -58,6 +58,7 @@ class MainWindow(QMainWindow):
         
         self.setCentralWidget(central_widget)
     
+    # Control de temas
     def apply_theme(self, theme):
         self.current_theme = theme
         
@@ -249,11 +250,11 @@ class MainWindow(QMainWindow):
         tab = QWidget()
         layout = QVBoxLayout()
         
-        # File operations section
+        # Grupo de operaciones de archivo
         operations_group = QGroupBox("Operaciones de Archivo")
         operations_layout = QVBoxLayout()
         
-        # File selection
+        # Selección de archivo
         file_section = QHBoxLayout()
         self.file_path_input = QLineEdit()
         self.file_path_input.setPlaceholderText("Seleccione un archivo para encriptar o desencriptar")
@@ -266,7 +267,7 @@ class MainWindow(QMainWindow):
         file_section.addWidget(self.file_path_input)
         file_section.addWidget(browse_btn)
         
-        # Password section
+        # Sección de contraseña
         password_section = QHBoxLayout()
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Ingrese contraseña para encriptar/desencriptar")
@@ -275,7 +276,7 @@ class MainWindow(QMainWindow):
         password_section.addWidget(QLabel("Contraseña:"))
         password_section.addWidget(self.password_input)
         
-        # Buttons section
+        # Sección de botones
         buttons_section = QHBoxLayout()
         
         self.encrypt_btn = QPushButton("Encriptar Archivo")
@@ -289,14 +290,14 @@ class MainWindow(QMainWindow):
         buttons_section.addWidget(self.encrypt_btn)
         buttons_section.addWidget(self.decrypt_btn)
         
-        # Add sections to operations layout
+        # Agregar secciones a la disposición de operaciones
         operations_layout.addLayout(file_section)
         operations_layout.addLayout(password_section)
         operations_layout.addLayout(buttons_section)
         
         operations_group.setLayout(operations_layout)
         
-        # Add to main layout
+        # Agregar a la disposición principal
         layout.addWidget(operations_group)
         layout.addStretch(1)
         
@@ -307,7 +308,7 @@ class MainWindow(QMainWindow):
         tab = QWidget()
         layout = QVBoxLayout()
         
-        # Files history table
+        # Tabla de historial de archivos
         history_group = QGroupBox("Sus Archivos Encriptados")
         history_layout = QVBoxLayout()
         
@@ -323,7 +324,7 @@ class MainWindow(QMainWindow):
         history_layout.addWidget(self.files_table)
         history_group.setLayout(history_layout)
         
-        # Refresh button
+        # Botón de actualización
         refresh_btn = QPushButton("Actualizar Lista")
         refresh_btn.clicked.connect(self.load_user_files)
         
@@ -337,7 +338,7 @@ class MainWindow(QMainWindow):
         tab = QWidget()
         layout = QVBoxLayout()
         
-        # Security settings
+        # Configuración de seguridad
         security_group = QGroupBox("Configuración de Seguridad")
         security_layout = QFormLayout()
         
@@ -354,7 +355,7 @@ class MainWindow(QMainWindow):
         
         security_group.setLayout(security_layout)
         
-        # Interface settings
+        # Configuración de interfaz
         interface_group = QGroupBox("Configuración de Interfaz")
         interface_layout = QFormLayout()
         
@@ -366,12 +367,12 @@ class MainWindow(QMainWindow):
         interface_layout.addRow("Tema:", self.theme_combo)
         interface_group.setLayout(interface_layout)
         
-        # Add to main layout
+        # Agregar a la disposición principal
         layout.addWidget(security_group)
         layout.addWidget(interface_group)
         layout.addStretch(1)
         
-        # Save button
+        # Botón de guardado
         save_btn = QPushButton("Guardar Configuración")
         save_btn.clicked.connect(self.save_settings)
         layout.addWidget(save_btn)
@@ -380,13 +381,13 @@ class MainWindow(QMainWindow):
         return tab
     
     def load_user_files(self):
-        # Get user's encrypted files from the database
+        # Obtener archivos encriptados del usuario de la base de datos
         files = self.db.get_encrypted_files_by_user(self.user_data['id'])
         
-        # Clear the table
+        # Limpiar la tabla
         self.files_table.setRowCount(0)
         
-        # Populate the table
+        # Rellenar la tabla
         for i, file in enumerate(files):
             self.files_table.insertRow(i)
             
@@ -419,10 +420,10 @@ class MainWindow(QMainWindow):
             return
         
         try:
-            # Encrypt the file
+            # Encriptar el archivo
             result = self.crypto_manager.encrypt_file(file_path, password)
             
-            # Store the file info in the database
+            # Almacenar la información del archivo en la base de datos
             self.db.add_encrypted_file(
                 self.user_data['id'],
                 result['original_filename'],
@@ -433,11 +434,11 @@ class MainWindow(QMainWindow):
                 result['tag']
             )
             
-            # Clear inputs
+            # Limpiar entradas
             self.file_path_input.clear()
             self.password_input.clear()
             
-            # Refresh the files list
+            # Actualizar la lista de archivos
             self.load_user_files()
             
             QMessageBox.information(self, "Éxito", f"Archivo encriptado exitosamente y guardado como {result['encrypted_filename']}")
@@ -457,15 +458,15 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Advertencia", "Por favor ingrese la contraseña de desencriptación.")
             return
         
-        # Check if the file ends with .encrypted
+        # Verificar si el archivo termina con .encrypted
         if not file_path.endswith('.encrypted'):
             QMessageBox.warning(self, "Advertencia", "El archivo seleccionado no parece ser un archivo encriptado. Los archivos encriptados deben tener la extensión .encrypted.")
             return
         
-        # Derive the original filename
-        original_name = os.path.basename(file_path)[:-10]  # Remove .encrypted
+        # Derivar el nombre original del archivo
+        original_name = os.path.basename(file_path)[:-10]  # Eliminar .encrypted
         
-        # Ask for output location
+        # Preguntar por la ubicación de salida
         output_path, _ = QFileDialog.getSaveFileName(
             self, "Guardar Archivo Desencriptado", original_name, "Todos los Archivos (*)"
         )
@@ -473,7 +474,7 @@ class MainWindow(QMainWindow):
         if not output_path:
             return
         
-        # Find the file in the database to get the nonce and tag
+        # Encontrar el archivo en la base de datos para obtener el nonce y el tag
         file_info = None
         files = self.db.get_encrypted_files_by_user(self.user_data['id'])
         
@@ -487,7 +488,7 @@ class MainWindow(QMainWindow):
             return
         
         try:
-            # Decrypt the file
+            # Desencriptar el archivo
             success = self.crypto_manager.decrypt_file(
                 file_path,
                 password,
@@ -511,7 +512,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Advertencia", "Información del archivo no encontrada.")
             return
         
-        # Ask for password
+        # Preguntar por la contraseña
         password, ok = QInputDialog.getText(
             self, "Contraseña de Desencriptación", "Ingrese la contraseña para desencriptar el archivo:",
             QLineEdit.EchoMode.Password
@@ -520,14 +521,14 @@ class MainWindow(QMainWindow):
         if not ok or not password:
             return
         
-        # Find the encrypted file
+        # Encontrar el archivo encriptado
         encrypted_file_path = os.path.join('data', file_info['encrypted_filename'])
         
         if not os.path.exists(encrypted_file_path):
             QMessageBox.warning(self, "Advertencia", f"Archivo encriptado no encontrado en {encrypted_file_path}. Por favor verifique la ubicación del archivo.")
             return
         
-        # Ask for output location
+        # Preguntar por la ubicación de salida
         output_path, _ = QFileDialog.getSaveFileName(
             self, "Guardar Archivo Desencriptado", file_info['original_filename'], "Todos los Archivos (*)"
         )
@@ -536,7 +537,7 @@ class MainWindow(QMainWindow):
             return
         
         try:
-            # Decrypt the file
+            # Desencriptar el archivo
             success = self.crypto_manager.decrypt_file(
                 encrypted_file_path,
                 password,
@@ -569,8 +570,8 @@ class MainWindow(QMainWindow):
         selected_theme = theme_map.get(theme, "Light")
         if selected_theme == "System":
             # Aquí se podría implementar la detección del tema del sistema
-            # Por ahora solo usaremos el tema claro por defecto
-            selected_theme = "Light"
+            # Por ahora solo usaremos el tema oscuro por defecto
+            selected_theme = "Dark"
             
         self.apply_theme(selected_theme)
     
