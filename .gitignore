@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Entorno virtual
+env/
+venv/
+ENV/
+.env
+.venv
+env.bak/
+venv.bak/
+
+# Carpetas de datos
+data/
+
+# Distribución / empaquetado
+dist/
+build/
+*.egg-info/
+
+# Archivos de registro
+*.log
+
+# Archivos de configuración local
+.env
+*.sqlite
+*.db
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db
+
+# Carpetas y archivos de IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~ 
