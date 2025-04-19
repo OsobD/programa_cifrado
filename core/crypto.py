@@ -1,11 +1,14 @@
 import os
 import base64
+import socket
+import datetime
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from argon2 import PasswordHasher
 from argon2.low_level import hash_secret_raw
 import argon2
+import cryptography.exceptions
 
 class CryptoManager:
     """
@@ -179,10 +182,12 @@ class CryptoManager:
             tag (bytes): Etiqueta de autenticación.
         
         Returns:
-            bool: True si el descifrado fue exitoso.
-        
-        Raises:
-            Exception: Si el descifrado falla por cualquier razón.
+            dict: Un diccionario con información sobre el resultado del descifrado:
+                - success (bool): True si el descifrado fue exitoso, False en caso contrario.
+                - message (str): Mensaje descriptivo sobre el resultado.
+                - error_type (str, opcional): Tipo de error en caso de fallo.
+                - timestamp (str, opcional): Marca de tiempo del intento.
+                - hostname (str, opcional): Nombre del host que realizó el intento.
         """
         try:
             # Read the encrypted file
@@ -200,13 +205,35 @@ class CryptoManager:
             # For decryption, we need to append the tag to the ciphertext
             ciphertext_and_tag = ciphertext + tag
             
-            plaintext = aesgcm.decrypt(nonce, ciphertext_and_tag, None)
-            
-            # Write the decrypted data to a new file
-            with open(output_path, 'wb') as decrypted_file:
-                decrypted_file.write(plaintext)
+            try:
+                plaintext = aesgcm.decrypt(nonce, ciphertext_and_tag, None)
                 
-            return True
-            
+                # Write the decrypted data to a new file
+                with open(output_path, 'wb') as decrypted_file:
+                    decrypted_file.write(plaintext)
+                    
+                return {
+                    "success": True, 
+                    "message": "Archivo descifrado correctamente"
+                }
+                
+            except cryptography.exceptions.InvalidTag:
+                # Error específico cuando el tag de autenticación no coincide
+                error_info = {
+                    "success": False,
+                    "error_type": "authentication_failed",
+                    "message": "Error de autenticación: El archivo ha sido modificado o corrompido",
+                    "timestamp": datetime.datetime.now().isoformat(),
+                    "hostname": socket.gethostname(),
+                    "file_path": encrypted_file_path
+                }
+                return error_info
+                
         except Exception as e:
-            raise Exception(f"Decryption failed: {str(e)}") 
+            return {
+                "success": False, 
+                "error_type": "unknown", 
+                "message": f"Error de descifrado: {str(e)}",
+                "timestamp": datetime.datetime.now().isoformat(),
+                "hostname": socket.gethostname()
+            } 

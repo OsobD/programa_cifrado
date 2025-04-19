@@ -7,6 +7,7 @@ from ui.login import LoginDialog
 from ui.main_window import MainWindow
 from utils.database import Database
 from utils.auth import Auth
+from utils.notifications import NotificationManager
 from core.crypto import CryptoManager
 
 def main():

@@ -4,8 +4,11 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                            QFileDialog, QMessageBox, QTabWidget, QLineEdit,
                            QFormLayout, QComboBox, QGroupBox, QHeaderView, 
                            QSplitter, QFrame, QDialog, QProgressBar, QInputDialog)
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, QTimer
 from PyQt5.QtGui import QIcon, QFont
+from datetime import datetime
+
+from utils.notifications import NotificationManager
 
 class MainWindow(QMainWindow):
     def __init__(self, crypto_manager, db, user_data):
@@ -14,8 +17,20 @@ class MainWindow(QMainWindow):
         self.db = db
         self.user_data = user_data
         self.current_theme = "Dark"
+        
+        # Inicializar el gestor de notificaciones
+        self.notification_manager = NotificationManager(db)
+        
+        # Configurar temporizador para verificar notificaciones periódicamente
+        self.notification_timer = QTimer(self)
+        self.notification_timer.timeout.connect(self.check_notifications)
+        self.notification_timer.start(60000)  # Verificar cada minuto
+        
         self.setup_ui()
         self.load_user_files()
+        
+        # Verificar notificaciones al iniciar
+        QTimer.singleShot(1000, self.check_notifications)
     
     def setup_ui(self):
         self.setWindowTitle("Encriptador de Archivos Seguro")
@@ -54,10 +69,14 @@ class MainWindow(QMainWindow):
         file_tab = self.create_file_tab()
         history_tab = self.create_history_tab()
         settings_tab = self.create_settings_tab()
+        log_tab = self.create_log_tab()
+        notifications_tab = self.create_notifications_tab()
         
         # Add tabs
         self.tab_widget.addTab(file_tab, "Encriptar/Desencriptar")
         self.tab_widget.addTab(history_tab, "Historial de Archivos")
+        self.tab_widget.addTab(log_tab, "Registro de Seguridad")
+        self.tab_widget.addTab(notifications_tab, "Notificaciones")
         self.tab_widget.addTab(settings_tab, "Configuración")
         
         # Add widgets to layout
@@ -399,6 +418,114 @@ class MainWindow(QMainWindow):
         tab.setLayout(layout)
         return tab
     
+    def create_log_tab(self):
+        """
+        Crea la pestaña de registro de intentos de descifrado.
+        
+        Returns:
+            QWidget: Widget con el contenido de la pestaña.
+        """
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        
+        # Título y descripción
+        title_label = QLabel("Registro de Seguridad - Intentos de Descifrado")
+        title_label.setStyleSheet("font-size: 16px; font-weight: bold;")
+        
+        description_label = QLabel(
+            "Esta tabla muestra los intentos de descifrado de archivos, tanto exitosos como fallidos."
+            " Los intentos fallidos pueden indicar actividad sospechosa o archivos corruptos."
+        )
+        description_label.setWordWrap(True)
+        
+        # Botón de actualizar
+        refresh_btn = QPushButton("Actualizar Registro")
+        refresh_btn.setFixedWidth(150)
+        refresh_btn.clicked.connect(self.load_decryption_attempts)
+        
+        # Tabla de intentos
+        self.attempts_table = QTableWidget()
+        self.attempts_table.setColumnCount(7)
+        self.attempts_table.setHorizontalHeaderLabels([
+            "Fecha/Hora", "Archivo", "Estado", "Tipo de Error", 
+            "Mensaje", "Equipo", "Dirección IP"
+        ])
+        
+        # Ajustar propiedades de la tabla
+        header = self.attempts_table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.attempts_table.setAlternatingRowColors(True)
+        self.attempts_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        
+        # Añadir widgets al layout
+        layout.addWidget(title_label)
+        layout.addWidget(description_label)
+        layout.addWidget(refresh_btn)
+        layout.addWidget(self.attempts_table)
+        
+        # Cargar intentos por primera vez
+        self.load_decryption_attempts()
+        
+        return tab
+    
+    def create_notifications_tab(self):
+        """
+        Crea la pestaña de notificaciones de seguridad.
+        
+        Returns:
+            QWidget: Widget con el contenido de la pestaña.
+        """
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        
+        # Título y descripción
+        title_label = QLabel("Centro de Notificaciones")
+        title_label.setStyleSheet("font-size: 16px; font-weight: bold;")
+        
+        description_label = QLabel(
+            "Aquí puede ver todas las notificaciones de seguridad generadas por el sistema."
+        )
+        description_label.setWordWrap(True)
+        
+        # Botón de actualizar
+        refresh_btn = QPushButton("Actualizar Notificaciones")
+        refresh_btn.setFixedWidth(180)
+        refresh_btn.clicked.connect(self.load_notifications)
+        
+        # Tabla de notificaciones
+        self.notifications_table = QTableWidget()
+        self.notifications_table.setColumnCount(5)
+        self.notifications_table.setHorizontalHeaderLabels([
+            "Fecha/Hora", "Título", "Mensaje", "Severidad", "Estado"
+        ])
+        
+        # Ajustar propiedades de la tabla
+        header = self.notifications_table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.notifications_table.setAlternatingRowColors(True)
+        self.notifications_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        
+        # Botón para marcar todas como leídas
+        mark_all_read_btn = QPushButton("Marcar Todas como Leídas")
+        mark_all_read_btn.clicked.connect(self.mark_all_notifications_read)
+        
+        # Añadir widgets al layout
+        layout.addWidget(title_label)
+        layout.addWidget(description_label)
+        
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(refresh_btn)
+        button_layout.addStretch(1)
+        button_layout.addWidget(mark_all_read_btn)
+        
+        layout.addLayout(button_layout)
+        layout.addWidget(self.notifications_table)
+        
+        # Cargar notificaciones por primera vez
+        self.load_notifications()
+        
+        return tab
+    
     def load_user_files(self):
         # Obtener archivos encriptados del usuario de la base de datos
         files = self.db.get_encrypted_files_by_user(self.user_data['id'])
@@ -508,7 +635,7 @@ class MainWindow(QMainWindow):
         
         try:
             # Desencriptar el archivo
-            success = self.crypto_manager.decrypt_file(
+            result = self.crypto_manager.decrypt_file(
                 file_path,
                 password,
                 output_path,
@@ -516,10 +643,38 @@ class MainWindow(QMainWindow):
                 file_info['tag']
             )
             
-            if success:
+            # Registrar el intento
+            import socket
+            hostname = socket.gethostname()
+            
+            self.db.log_decryption_attempt(
+                user_id=self.user_data['id'],
+                file_id=file_info['id'],
+                hostname=hostname,
+                success=result['success'],
+                error_type=result.get('error_type'),
+                error_message=result.get('message')
+            )
+            
+            if result['success']:
                 self.file_path_input.clear()
                 self.password_input.clear()
                 QMessageBox.information(self, "Éxito", f"Archivo desencriptado exitosamente y guardado en {output_path}")
+            else:
+                # Mostrar mensaje de error específico
+                if result.get('error_type') == 'authentication_failed':
+                    QMessageBox.critical(self, "Error de Autenticación", 
+                        "El archivo parece haber sido modificado o corrompido. No se puede verificar su autenticidad.\n\n"
+                        "Esto puede ocurrir si el archivo fue alterado después de ser cifrado, lo que es una "
+                        "característica de seguridad del sistema de cifrado utilizado (AES-GCM).")
+                else:
+                    QMessageBox.critical(self, "Error de Desencriptación", result.get('message'))
+                
+                # Verificar si se deben mostrar alertas por intentos fallidos
+                if not result['success']:
+                    self.notification_manager.check_failed_attempts(self.user_data['id'])
+                    # Actualizamos la tabla de intentos
+                    self.load_decryption_attempts()
             
         except Exception as e:
             QMessageBox.critical(self, "Error de Desencriptación", str(e))
@@ -557,7 +712,7 @@ class MainWindow(QMainWindow):
         
         try:
             # Desencriptar el archivo
-            success = self.crypto_manager.decrypt_file(
+            result = self.crypto_manager.decrypt_file(
                 encrypted_file_path,
                 password,
                 output_path,
@@ -565,8 +720,36 @@ class MainWindow(QMainWindow):
                 file_info['tag']
             )
             
-            if success:
+            # Registrar el intento
+            import socket
+            hostname = socket.gethostname()
+            
+            self.db.log_decryption_attempt(
+                user_id=self.user_data['id'],
+                file_id=file_info['id'],
+                hostname=hostname,
+                success=result['success'],
+                error_type=result.get('error_type'),
+                error_message=result.get('message')
+            )
+            
+            if result['success']:
                 QMessageBox.information(self, "Éxito", f"Archivo desencriptado exitosamente y guardado en {output_path}")
+            else:
+                # Mostrar mensaje de error específico
+                if result.get('error_type') == 'authentication_failed':
+                    QMessageBox.critical(self, "Error de Autenticación", 
+                        "El archivo parece haber sido modificado o corrompido. No se puede verificar su autenticidad.\n\n"
+                        "Esto puede ocurrir si el archivo fue alterado después de ser cifrado, lo que es una "
+                        "característica de seguridad del sistema de cifrado utilizado (AES-GCM).")
+                else:
+                    QMessageBox.critical(self, "Error de Desencriptación", result.get('message'))
+                
+                # Verificar si se deben mostrar alertas por intentos fallidos
+                if not result['success']:
+                    self.notification_manager.check_failed_attempts(self.user_data['id'])
+                    # Actualizamos la tabla de intentos
+                    self.load_decryption_attempts()
             
         except Exception as e:
             QMessageBox.critical(self, "Error de Desencriptación", str(e))
@@ -604,3 +787,109 @@ class MainWindow(QMainWindow):
         if reply == QMessageBox.StandardButton.Yes:
             self.close()
             # Signal to reopen login window would go here 
+    
+    def load_decryption_attempts(self):
+        """
+        Carga y muestra los intentos de descifrado en la tabla.
+        """
+        # Obtener los intentos del usuario actual
+        attempts = self.db.get_decryption_attempts(user_id=self.user_data['id'])
+        
+        # Limpiar tabla
+        self.attempts_table.setRowCount(0)
+        
+        # Llenar tabla con datos
+        for attempt in attempts:
+            row_position = self.attempts_table.rowCount()
+            self.attempts_table.insertRow(row_position)
+            
+            # Formatear timestamp
+            timestamp = datetime.strptime(attempt['timestamp'], "%Y-%m-%d %H:%M:%S")
+            formatted_timestamp = timestamp.strftime("%d/%m/%Y %H:%M:%S")
+            
+            # Estado como texto
+            status = "Exitoso" if attempt['success'] else "Fallido"
+            
+            # Llenar celdas
+            self.attempts_table.setItem(row_position, 0, QTableWidgetItem(formatted_timestamp))
+            self.attempts_table.setItem(row_position, 1, QTableWidgetItem(attempt['original_filename']))
+            self.attempts_table.setItem(row_position, 2, QTableWidgetItem(status))
+            self.attempts_table.setItem(row_position, 3, QTableWidgetItem(attempt['error_type'] or ""))
+            self.attempts_table.setItem(row_position, 4, QTableWidgetItem(attempt['error_message'] or ""))
+            self.attempts_table.setItem(row_position, 5, QTableWidgetItem(attempt['hostname'] or ""))
+            self.attempts_table.setItem(row_position, 6, QTableWidgetItem(attempt['ip_address'] or "")) 
+    
+    def check_notifications(self):
+        """
+        Verifica y muestra notificaciones pendientes.
+        """
+        unread_notifications = self.notification_manager.get_notifications(
+            self.user_data['id'], unread_only=True
+        )
+        
+        if unread_notifications:
+            # Mostrar la primera notificación no leída
+            notification = unread_notifications[0]
+            self.notification_manager.show_notification_dialog(self, notification)
+            self.notification_manager.mark_as_read(notification['id']) 
+    
+    def load_notifications(self):
+        """
+        Carga y muestra las notificaciones en la tabla.
+        """
+        # Obtener las notificaciones del usuario actual
+        notifications = self.notification_manager.get_notifications(self.user_data['id'])
+        
+        # Limpiar tabla
+        self.notifications_table.setRowCount(0)
+        
+        # Llenar tabla con datos
+        for notification in notifications:
+            row_position = self.notifications_table.rowCount()
+            self.notifications_table.insertRow(row_position)
+            
+            # Formatear timestamp
+            timestamp = datetime.strptime(notification['timestamp'], "%Y-%m-%d %H:%M:%S")
+            formatted_timestamp = timestamp.strftime("%d/%m/%Y %H:%M:%S")
+            
+            # Estado como texto
+            read_status = "Leída" if notification['read'] else "No leída"
+            
+            # Severidad como texto
+            severity_map = {
+                "low": "Baja",
+                "medium": "Media",
+                "high": "Alta"
+            }
+            severity = severity_map.get(notification['severity'], "Media")
+            
+            # Llenar celdas
+            self.notifications_table.setItem(row_position, 0, QTableWidgetItem(formatted_timestamp))
+            self.notifications_table.setItem(row_position, 1, QTableWidgetItem(notification['title']))
+            self.notifications_table.setItem(row_position, 2, QTableWidgetItem(notification['message']))
+            self.notifications_table.setItem(row_position, 3, QTableWidgetItem(severity))
+            self.notifications_table.setItem(row_position, 4, QTableWidgetItem(read_status))
+            
+            # Colorear según la severidad
+            if notification['severity'] == 'high':
+                self.notifications_table.item(row_position, 3).setBackground(Qt.GlobalColor.red)
+            elif notification['severity'] == 'medium':
+                self.notifications_table.item(row_position, 3).setBackground(Qt.GlobalColor.yellow)
+            else:
+                self.notifications_table.item(row_position, 3).setBackground(Qt.GlobalColor.green)
+                
+            # Colorear según estado de lectura
+            if not notification['read']:
+                self.notifications_table.item(row_position, 4).setBackground(Qt.GlobalColor.cyan)
+    
+    def mark_all_notifications_read(self):
+        """
+        Marca todas las notificaciones del usuario como leídas.
+        """
+        notifications = self.notification_manager.get_notifications(self.user_data['id'], unread_only=True)
+        
+        for notification in notifications:
+            self.notification_manager.mark_as_read(notification['id'])
+            
+        # Actualizar la vista
+        self.load_notifications() 
