@@ -12,21 +12,23 @@ class LoginDialog(QDialog):
     
     # Estilos de UI
     def setup_ui(self):
-        self.setWindowTitle("Encriptador de Archivos Seguro - Acceso")
+        self.setWindowTitle("OsobCrypter - Acceso")
         self.setMinimumWidth(400)
         self.setStyleSheet("""
             QDialog {
-                background-color: #f0f0f0;
+                background-color: #172424;
+                color: #e0e0e0;
             }
             QLabel {
                 font-size: 14px;
-                color: #2c3e50;
+                color: #e0e0e0;
             }
             QLineEdit {
                 padding: 8px;
-                border: 1px solid #bdc3c7;
+                border: 1px solid #444444;
                 border-radius: 4px;
-                background-color: white;
+                background-color: #253535;
+                color: #e0e0e0;
                 font-size: 13px;
             }
             QPushButton {
@@ -52,7 +54,7 @@ class LoginDialog(QDialog):
         """)
         
         # Create widgets
-        self.title_label = QLabel("Encriptador de Archivos Seguro")
+        self.title_label = QLabel("OsobCrypter")
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.title_label.setStyleSheet("font-size: 20px; font-weight: bold; margin-bottom: 20px;")
         

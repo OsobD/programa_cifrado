@@ -12,7 +12,8 @@ from core.crypto import CryptoManager
 def main():
     # Crear aplicación
     app = QApplication(sys.argv)
-    app.setApplicationName("Encriptador de Archivos Seguro")
+    app.setApplicationName("OsobCrypter")
+    app.setWindowIcon(QIcon("Logo Of Rojo.png"))
     
     # Asegurar que existan los directorios de datos
     os.makedirs('data', exist_ok=True)

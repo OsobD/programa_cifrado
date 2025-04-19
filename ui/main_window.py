@@ -13,7 +13,7 @@ class MainWindow(QMainWindow):
         self.crypto_manager = crypto_manager
         self.db = db
         self.user_data = user_data
-        self.current_theme = "Light"
+        self.current_theme = "Dark"
         self.setup_ui()
         self.load_user_files()
     
@@ -32,7 +32,15 @@ class MainWindow(QMainWindow):
         welcome_label.setStyleSheet("font-size: 16px; font-weight: bold;")
         
         logout_btn = QPushButton("Cerrar Sesión")
-        logout_btn.setFixedWidth(100)
+        logout_btn.setFixedWidth(120)
+        logout_btn.setFixedHeight(30)
+        logout_btn.setStyleSheet("""
+            background-color: #e74c3c;
+            color: white;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 12px;
+        """)
         logout_btn.clicked.connect(self.logout)
         
         header_layout.addWidget(welcome_label)
@@ -315,11 +323,22 @@ class MainWindow(QMainWindow):
         self.files_table = QTableWidget()
         self.files_table.setColumnCount(5)
         self.files_table.setHorizontalHeaderLabels(["Nombre Original", "Tipo", "Tamaño", "Fecha de Encriptación", "Acciones"])
+        
+        # Configurar el comportamiento de la tabla
+        self.files_table.setAlternatingRowColors(True)
+        self.files_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.files_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.files_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.files_table.verticalHeader().setVisible(False)
+        self.files_table.setColumnWidth(4, 150)
+        self.files_table.verticalHeader().setDefaultSectionSize(45)
+        
+        # Configurar el tamaño de las columnas
         self.files_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.files_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         self.files_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         self.files_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
-        self.files_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+        self.files_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)
         
         history_layout.addWidget(self.files_table)
         history_group.setLayout(history_layout)
