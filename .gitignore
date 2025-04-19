@@ -21,6 +21,12 @@ data/
 dist/
 build/
 *.egg-info/
+*.spec
+*.manifest
+*.exe
+*.pyz
+*.pyzw
+temp_resources/
 
 # Archivos de registro
 *.log

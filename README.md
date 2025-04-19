@@ -89,6 +89,36 @@ python main.py
 - `utils/`: Utilidades de base de datos y autenticación
 - `data/`: Almacenamiento para archivos encriptados y base de datos
 
+## Compilación a Ejecutable (.exe)
+
+Para crear un archivo ejecutable autocontenido para Windows:
+
+### Método Rápido (Windows)
+
+1. Ejecute el script de compilación incluido:
+
+```
+build_exe.bat
+```
+
+2. El ejecutable se generará en la carpeta `dist`.
+
+### Método Manual
+
+1. Asegúrese de tener instaladas todas las dependencias, incluyendo PyInstaller:
+
+```
+pip install -r requirements.txt
+```
+
+2. Ejecute el script de compilación:
+
+```
+python build.py
+```
+
+3. El archivo ejecutable `OsobCrypter.exe` se creará en la carpeta `dist`.
+
 ## Licencia
 
 Este proyecto está licenciado bajo la Licencia MIT - consulte el archivo LICENSE para más detalles. 

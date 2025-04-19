@@ -110,6 +110,9 @@ class MainWindow(QMainWindow):
                     background-color: #1e2e2e;
                     border-bottom-color: #1e2e2e;
                 }
+                QTabBar::tab:hover {
+                    background-color: #2c3e3e;
+                }
                 QLabel {
                     color: #e0e0e0;
                 }
@@ -149,23 +152,33 @@ class MainWindow(QMainWindow):
                 }
                 QTableWidget {
                     border: 1px solid #444444;
-                    gridline-color: #444444;
+                    gridline-color: #4a6868;
                     background-color: #253535;
                     color: #e0e0e0;
                 }
                 QTableWidget::item {
                     padding: 6px;
+                    border-bottom: 1px solid #455555;
                 }
                 QTableWidget::item:selected {
                     background-color: #354545;
                     color: #ffffff;
                 }
+                QHeaderView {
+                    background-color: #1a2a2a;
+                }
                 QHeaderView::section {
                     background-color: #1a2a2a;
-                    padding: 6px;
-                    border: 1px solid #444444;
+                    padding: 8px;
+                    border: 1px solid #4a6868;
                     font-weight: bold;
                     color: #e0e0e0;
+                }
+                QHeaderView::section:horizontal {
+                    border-top: 1px solid #4a6868;
+                }
+                QHeaderView::section:vertical {
+                    border-left: 1px solid #4a6868;
                 }
                 QGroupBox {
                     font-weight: bold;
@@ -180,6 +193,50 @@ class MainWindow(QMainWindow):
                     subcontrol-position: top left;
                     left: 8px;
                     padding: 0 5px;
+                }
+                QScrollBar:vertical {
+                    border: none;
+                    background: #253535;
+                    width: 10px;
+                    margin: 15px 0 15px 0;
+                }
+                QScrollBar::handle:vertical {
+                    background: #4a6868;
+                    min-height: 30px;
+                    border-radius: 5px;
+                }
+                QScrollBar::handle:vertical:hover {
+                    background: #5a7878;
+                }
+                QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                    border: none;
+                    background: none;
+                }
+                QScrollBar:horizontal {
+                    border: none;
+                    background: #253535;
+                    height: 10px;
+                    margin: 0px 15px 0 15px;
+                }
+                QScrollBar::handle:horizontal {
+                    background: #4a6868;
+                    min-width: 30px;
+                    border-radius: 5px;
+                }
+                QScrollBar::handle:horizontal:hover {
+                    background: #5a7878;
+                }
+                QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+                    border: none;
+                    background: none;
+                }
+                QMenu {
+                    background-color: #253535;
+                    color: #e0e0e0;
+                    border: 1px solid #4a6868;
+                }
+                QMenu::item:selected {
+                    background-color: #354545;
                 }
             """)
         else:  # Light theme
@@ -454,8 +511,13 @@ class MainWindow(QMainWindow):
         # Ajustar propiedades de la tabla
         header = self.attempts_table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        
+        # Personalizar la apariencia de la tabla
         self.attempts_table.setAlternatingRowColors(True)
         self.attempts_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.attempts_table.verticalHeader().setVisible(False)  # Ocultar cabecera vertical
+        self.attempts_table.setShowGrid(True)  # Mostrar rejilla
+        self.attempts_table.setGridStyle(Qt.PenStyle.SolidLine)  # Estilo de línea sólida para la rejilla
         
         # Añadir widgets al layout
         layout.addWidget(title_label)
@@ -813,11 +875,38 @@ class MainWindow(QMainWindow):
             # Llenar celdas
             self.attempts_table.setItem(row_position, 0, QTableWidgetItem(formatted_timestamp))
             self.attempts_table.setItem(row_position, 1, QTableWidgetItem(attempt['original_filename']))
-            self.attempts_table.setItem(row_position, 2, QTableWidgetItem(status))
-            self.attempts_table.setItem(row_position, 3, QTableWidgetItem(attempt['error_type'] or ""))
-            self.attempts_table.setItem(row_position, 4, QTableWidgetItem(attempt['error_message'] or ""))
+            
+            # Crear item para el estado y darle color de fondo según éxito o fallo
+            status_item = QTableWidgetItem(status)
+            if attempt['success']:
+                status_item.setBackground(Qt.GlobalColor.green)
+                status_item.setForeground(Qt.GlobalColor.black)
+            else:
+                status_item.setBackground(Qt.GlobalColor.red)
+                status_item.setForeground(Qt.GlobalColor.white)
+            
+            self.attempts_table.setItem(row_position, 2, status_item)
+            
+            error_type_item = QTableWidgetItem(attempt['error_type'] or "")
+            if attempt['error_type']:
+                error_type_item.setForeground(Qt.GlobalColor.red)
+            self.attempts_table.setItem(row_position, 3, error_type_item)
+            
+            error_msg_item = QTableWidgetItem(attempt['error_message'] or "")
+            if attempt['error_message']:
+                error_msg_item.setForeground(Qt.GlobalColor.red)
+            self.attempts_table.setItem(row_position, 4, error_msg_item)
+            
             self.attempts_table.setItem(row_position, 5, QTableWidgetItem(attempt['hostname'] or ""))
-            self.attempts_table.setItem(row_position, 6, QTableWidgetItem(attempt['ip_address'] or "")) 
+            self.attempts_table.setItem(row_position, 6, QTableWidgetItem(attempt['ip_address'] or ""))
+            
+            # Configurar fuente
+            for col in range(7):
+                item = self.attempts_table.item(row_position, col)
+                if item:
+                    font = QFont()
+                    font.setPointSize(9)
+                    item.setFont(font)
     
     def check_notifications(self):
         """
